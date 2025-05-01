@@ -11,6 +11,7 @@ Stages of the compiler processing:
 
 ## Repository structure 
     c-compiler/
+    ├── Cargo.lock
     ├── Cargo.toml
     ├── README.md
     ├── examples/
@@ -24,7 +25,7 @@ Stages of the compiler processing:
         │   ├── semantic.rs
         │   ├── codegen.rs
         │   ├── ir.rs
-        │   ├── symbol_table.rs
+        │   ├── sym_table.rs
         │   └── utils.rs
         └── data_structures/
             ├── ast.rs

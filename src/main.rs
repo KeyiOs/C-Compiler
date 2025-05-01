@@ -1,7 +1,7 @@
-mod logic {
-    pub mod lexer;
-}
+mod logic;
+mod data_structures;
+
 
 fn main() {
-    logic::lexer::hello_world();
+    logic::lexer::lexer_start();
 }
