@@ -3,5 +3,5 @@ mod data_structures;
 
 
 fn main() {
-    logic::lexer::lexer_start();
+    let _error: Result<(), Box<dyn std::error::Error>> = logic::lexer::lexer_start();
 }

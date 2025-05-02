@@ -1,3 +1,7 @@
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+
+
 pub enum _Keyword {
     Auto,
     Break,
@@ -49,7 +53,6 @@ pub enum _Keyword {
 pub enum Symbol {
     Ampersand,
     Asterisk,
-    At,
     Backslash,
     Caret,
     Colon,
@@ -62,6 +65,7 @@ pub enum Symbol {
     GreaterThan,
     Hash,
     LessThan,
+    Minus,
     ParenthesisLeft,
     ParenthesisRight,
     Percent,
@@ -79,14 +83,10 @@ pub enum Symbol {
     CurlyBracketRight,
 }
 
-use once_cell::sync::Lazy;
-use std::collections::HashMap;
-
 pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
     HashMap::from([
         ('&', Symbol::Ampersand),
         ('*', Symbol::Asterisk),
-        ('@', Symbol::At),
         ('\\', Symbol::Backslash),
         ('^', Symbol::Caret),
         (':', Symbol::Colon),
@@ -99,6 +99,7 @@ pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
         ('>', Symbol::GreaterThan),
         ('#', Symbol::Hash),
         ('<', Symbol::LessThan),
+        ('-', Symbol::Minus),
         ('(', Symbol::ParenthesisLeft),
         (')', Symbol::ParenthesisRight),
         ('%', Symbol::Percent),
