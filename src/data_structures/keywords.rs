@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::fmt;
 
 
 pub enum _Keyword {
@@ -119,7 +120,8 @@ pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
 });
 
 #[derive(Debug, Clone)]
-pub enum _TokenType {
+#[allow(dead_code)]
+pub enum TokenType {
     Keyword(String),
     Operator(char),
     Literal(String),
@@ -129,9 +131,24 @@ pub enum _TokenType {
 }
 
 #[derive(Debug, Clone)]
-pub struct _Token {
-    pub token_type: _TokenType,
-    pub value: String,
+#[allow(dead_code)]
+pub struct Token<'a> {
+    pub token_type: TokenType,
+    pub value: Option<String>,
     pub line: usize,
-    pub column: usize,
+    pub next: Option<&'a Token<'a>>,
+    pub prev: Option<&'a Token<'a>>,
+}
+
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TokenType::Keyword(kw) => write!(f, "Keyword({})", kw),
+            TokenType::Operator(op) => write!(f, "Operator({})", op),
+            TokenType::Literal(lit) => write!(f, "Literal({})", lit),
+            TokenType::Identifier(id) => write!(f, "Identifier({})", id),
+            TokenType::Punctuation(punc) => write!(f, "Punctuation({})", punc),
+            TokenType::EOF => write!(f, "EOF"),
+        }
+    }
 }

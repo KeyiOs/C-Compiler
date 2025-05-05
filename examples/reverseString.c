@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void reverseString(char *str) {
+void reverseString (char *str) {
     int length = strlen(str);
     int start = 0, end = length - 1;
     char temp;
@@ -15,7 +15,7 @@ void reverseString(char *str) {
     }
 }
 
-int main() {
+int main () {
     char str[100];
     printf("Enter a string: ");
     if (fgets(str, sizeof(str), stdin) != NULL) {
