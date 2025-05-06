@@ -84,6 +84,20 @@ pub enum Symbol {
     CurlyBracketRight,
 }
 
+pub enum _MathSymbol {
+    Ampersand,
+    Asterisk,
+    Caret,
+    Equal,
+    GreaterThan,
+    LessThan,
+    Minus,
+    Percent,
+    Pipe,
+    Plus,
+    Slash,
+}
+
 pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
     HashMap::from([
         ('&', Symbol::Ampersand),
@@ -116,6 +130,22 @@ pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
         ('_', Symbol::Underscore),
         ('{', Symbol::CurlyBracketLeft),
         ('}', Symbol::CurlyBracketRight),
+    ])
+});
+
+pub static _MATH_SYMBOL_MAP: Lazy<HashMap<char, _MathSymbol>> = Lazy::new(|| {
+    HashMap::from([
+        ('&', _MathSymbol::Ampersand),
+        ('*', _MathSymbol::Asterisk),
+        ('^', _MathSymbol::Caret),
+        ('=', _MathSymbol::Equal),
+        ('>', _MathSymbol::GreaterThan),
+        ('<', _MathSymbol::LessThan),
+        ('-', _MathSymbol::Minus),
+        ('%', _MathSymbol::Percent),
+        ('|', _MathSymbol::Pipe),
+        ('+', _MathSymbol::Plus),
+        ('/', _MathSymbol::Slash),
     ])
 });
 

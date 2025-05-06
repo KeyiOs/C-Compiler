@@ -20,6 +20,7 @@ int main () {
     printf("Enter a string: ");
     if (fgets(str, sizeof(str), stdin) != NULL) {
         size_t len = strlen(str);
+        
         if (len > 0 && str[len - 1] == '\n') {
             str[len - 1] = '\0';
         }
