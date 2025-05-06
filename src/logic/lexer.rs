@@ -1,4 +1,4 @@
-use crate::data_structures::keywords::SYMBOL_MAP;
+use crate::data_structures::keywords::{DOUBLE_SYMBOL_MAP, SYMBOL_MAP};
 use std::fs;
 
 
@@ -19,9 +19,9 @@ pub fn lexer_start() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         } else if character.is_numeric() {
+            buffer.push(character);
+
             if let Some(&next_char) = chars.peek() {
-                buffer.push(character);
-                
                 if next_char.is_numeric() {
                     continue;
                 } else if next_char.is_whitespace() || SYMBOL_MAP.contains_key(&next_char) {
@@ -34,18 +34,30 @@ pub fn lexer_start() -> Result<(), Box<dyn std::error::Error>> {
         } else if character.is_whitespace() {
             continue;
         } else if SYMBOL_MAP.contains_key(&character) {
-            println!("{}", character);
+            if let Some(&next_char) = chars.peek() {
+                if DOUBLE_SYMBOL_MAP.contains_key(format!("{}{}", character, next_char).as_str()) {
+                    if let Some(third_char) = chars.clone().skip(1).next() {
+                        let triple = format!("{}{}{}", character, next_char, third_char);
+        
+                        if DOUBLE_SYMBOL_MAP.contains_key(triple.as_str()) {
+                            println!("{}{}{}", character, next_char, third_char);
+                            chars.next();
+                            chars.next();
+                            continue;
+                        }
+                    }
+                    println!("{}", format!("{}{}", character, next_char));
+                    chars.next();
+                } else {
+                    println!("{}", character);
+                }
+            } else {
+                println!("{}", character);
+            }
         } else {
             println!("Unknown: {}", character);
         }
     };
 
-    set_token();
-
     Ok(())
-}
-
-
-fn set_token() {
-    
 }

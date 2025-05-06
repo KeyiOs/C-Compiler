@@ -58,7 +58,6 @@ pub enum Symbol {
     Caret,
     Colon,
     Comma,
-    Dollar,
     Dot,
     DoubleQuote,
     Equal,
@@ -84,6 +83,31 @@ pub enum Symbol {
     CurlyBracketRight,
 }
 
+pub enum DoubleSymbol {
+    DoubleAmpersand,
+    DoubleMinus,
+    DoublePipe,
+    DoublePlus,
+    DoubleSlash,
+    Pointer,
+    DoubleGreaterThan,
+    DoubleLessThan,
+    LessThanEqual,
+    GreaterThanEqual,
+    DoubleEqual,
+    ExclamationEqual,
+    PlusEqual,
+    MinusEqual,
+    AsteriskEqual,
+    SlashEqual,
+    PercentEqual,
+    LeftShiftEqual,
+    RightShiftEqual,
+    AmpersandEqual,
+    CaretEqual,
+    PipeEqual,
+}
+
 pub enum _MathSymbol {
     Ampersand,
     Asterisk,
@@ -106,7 +130,6 @@ pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
         ('^', Symbol::Caret),
         (':', Symbol::Colon),
         (',', Symbol::Comma),
-        ('$', Symbol::Dollar),
         ('.', Symbol::Dot),
         ('"', Symbol::DoubleQuote),
         ('=', Symbol::Equal),
@@ -146,6 +169,33 @@ pub static _MATH_SYMBOL_MAP: Lazy<HashMap<char, _MathSymbol>> = Lazy::new(|| {
         ('|', _MathSymbol::Pipe),
         ('+', _MathSymbol::Plus),
         ('/', _MathSymbol::Slash),
+    ])
+});
+
+pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
+    HashMap::from([
+        ("&&", DoubleSymbol::DoubleAmpersand),
+        ("--", DoubleSymbol::DoubleMinus),
+        ("||", DoubleSymbol::DoublePipe),
+        ("++", DoubleSymbol::DoublePlus),
+        ("//", DoubleSymbol::DoubleSlash),
+        ("->", DoubleSymbol::Pointer),
+        (">>", DoubleSymbol::DoubleGreaterThan),
+        ("<<", DoubleSymbol::DoubleLessThan),
+        ("<=", DoubleSymbol::LessThanEqual),
+        (">=", DoubleSymbol::GreaterThanEqual),
+        ("==", DoubleSymbol::DoubleEqual),
+        ("!=", DoubleSymbol::ExclamationEqual),
+        ("+=", DoubleSymbol::PlusEqual),
+        ("-=", DoubleSymbol::MinusEqual),
+        ("*=", DoubleSymbol::AsteriskEqual),
+        ("/=", DoubleSymbol::SlashEqual),
+        ("%=", DoubleSymbol::PercentEqual),
+        ("<<=", DoubleSymbol::LeftShiftEqual),
+        (">>=", DoubleSymbol::RightShiftEqual),
+        ("&=", DoubleSymbol::AmpersandEqual),
+        ("^=", DoubleSymbol::CaretEqual),
+        ("|=", DoubleSymbol::PipeEqual),
     ])
 });
 
