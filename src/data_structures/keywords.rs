@@ -1,9 +1,10 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::fmt;
+use std::str::FromStr;
 
 
-pub enum _Keyword {
+#[allow(dead_code)]
+pub enum Keyword {
     Auto,
     Break,
     Case,
@@ -20,6 +21,7 @@ pub enum _Keyword {
     For,
     Goto,
     If,
+    Include,
     Inline,
     Int,
     Long,
@@ -50,7 +52,63 @@ pub enum _Keyword {
     _ThreadLocal,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+
+impl FromStr for Keyword {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "auto" => Ok(Keyword::Auto),
+            "break" => Ok(Keyword::Break),
+            "case" => Ok(Keyword::Case),
+            "char" => Ok(Keyword::Char),
+            "const" => Ok(Keyword::Const),
+            "continue" => Ok(Keyword::Continue),
+            "default" => Ok(Keyword::Default),
+            "do" => Ok(Keyword::Do),
+            "double" => Ok(Keyword::Double),
+            "else" => Ok(Keyword::Else),
+            "enum" => Ok(Keyword::Enum),
+            "extern" => Ok(Keyword::Extern),
+            "float" => Ok(Keyword::Float),
+            "for" => Ok(Keyword::For),
+            "goto" => Ok(Keyword::Goto),
+            "if" => Ok(Keyword::If),
+            "include" => Ok(Keyword::Include),
+            "inline" => Ok(Keyword::Inline),
+            "int" => Ok(Keyword::Int),
+            "long" => Ok(Keyword::Long),
+            "register" => Ok(Keyword::Register),
+            "restrict" => Ok(Keyword::Restrict),
+            "return" => Ok(Keyword::Return),
+            "short" => Ok(Keyword::Short),
+            "signed" => Ok(Keyword::Signed),
+            "sizeof" => Ok(Keyword::Sizeof),
+            "static" => Ok(Keyword::Static),
+            "struct" => Ok(Keyword::Struct),
+            "switch" => Ok(Keyword::Switch),
+            "typedef" => Ok(Keyword::Typedef),
+            "union" => Ok(Keyword::Union),
+            "unsigned" => Ok(Keyword::Unsigned),
+            "void" => Ok(Keyword::Void),
+            "volatile" => Ok(Keyword::Volatile),
+            "while" => Ok(Keyword::While),
+            "_Alignas" => Ok(Keyword::_Alignas),
+            "_Alignof" => Ok(Keyword::_Alignof),
+            "_Atomic" => Ok(Keyword::_Atomic),
+            "_Bool" => Ok(Keyword::_Bool),
+            "_Complex" => Ok(Keyword::_Complex),
+            "_Generic" => Ok(Keyword::_Generic),
+            "_Imaginary" => Ok(Keyword::_Imaginary),
+            "_Noreturn" => Ok(Keyword::_Noreturn),
+            "_StaticAssert" => Ok(Keyword::_StaticAssert),
+            "_ThreadLocal" => Ok(Keyword::_ThreadLocal),
+            _ => Err(()),
+        }
+    }
+}
+
+
 pub enum Symbol {
     Ampersand,
     Asterisk,
@@ -63,7 +121,6 @@ pub enum Symbol {
     Equal,
     Exclamation,
     GreaterThan,
-    Hash,
     LessThan,
     Minus,
     ParenthesisLeft,
@@ -78,10 +135,43 @@ pub enum Symbol {
     SquareBracketLeft,
     SquareBracketRight,
     Tilde,
-    Underscore,
     CurlyBracketLeft,
     CurlyBracketRight,
 }
+
+
+pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
+    HashMap::from([
+        ('&', Symbol::Ampersand),
+        ('*', Symbol::Asterisk),
+        ('\\', Symbol::Backslash),
+        ('^', Symbol::Caret),
+        (':', Symbol::Colon),
+        (',', Symbol::Comma),
+        ('.', Symbol::Dot),
+        ('"', Symbol::DoubleQuote),
+        ('=', Symbol::Equal),
+        ('!', Symbol::Exclamation),
+        ('>', Symbol::GreaterThan),
+        ('<', Symbol::LessThan),
+        ('-', Symbol::Minus),
+        ('(', Symbol::ParenthesisLeft),
+        (')', Symbol::ParenthesisRight),
+        ('%', Symbol::Percent),
+        ('|', Symbol::Pipe),
+        ('+', Symbol::Plus),
+        ('?', Symbol::Question),
+        (';', Symbol::Semicolon),
+        ('\'', Symbol::SingleQuote),
+        ('/', Symbol::Slash),
+        ('[', Symbol::SquareBracketLeft),
+        (']', Symbol::SquareBracketRight),
+        ('~', Symbol::Tilde),
+        ('{', Symbol::CurlyBracketLeft),
+        ('}', Symbol::CurlyBracketRight),
+    ])
+});
+
 
 pub enum DoubleSymbol {
     DoubleAmpersand,
@@ -89,6 +179,7 @@ pub enum DoubleSymbol {
     DoublePipe,
     DoublePlus,
     DoubleSlash,
+    MultilineComment,
     Pointer,
     DoubleGreaterThan,
     DoubleLessThan,
@@ -108,69 +199,6 @@ pub enum DoubleSymbol {
     PipeEqual,
 }
 
-pub enum _MathSymbol {
-    Ampersand,
-    Asterisk,
-    Caret,
-    Equal,
-    GreaterThan,
-    LessThan,
-    Minus,
-    Percent,
-    Pipe,
-    Plus,
-    Slash,
-}
-
-pub static SYMBOL_MAP: Lazy<HashMap<char, Symbol>> = Lazy::new(|| {
-    HashMap::from([
-        ('&', Symbol::Ampersand),
-        ('*', Symbol::Asterisk),
-        ('\\', Symbol::Backslash),
-        ('^', Symbol::Caret),
-        (':', Symbol::Colon),
-        (',', Symbol::Comma),
-        ('.', Symbol::Dot),
-        ('"', Symbol::DoubleQuote),
-        ('=', Symbol::Equal),
-        ('!', Symbol::Exclamation),
-        ('>', Symbol::GreaterThan),
-        ('#', Symbol::Hash),
-        ('<', Symbol::LessThan),
-        ('-', Symbol::Minus),
-        ('(', Symbol::ParenthesisLeft),
-        (')', Symbol::ParenthesisRight),
-        ('%', Symbol::Percent),
-        ('|', Symbol::Pipe),
-        ('+', Symbol::Plus),
-        ('?', Symbol::Question),
-        (';', Symbol::Semicolon),
-        ('\'', Symbol::SingleQuote),
-        ('/', Symbol::Slash),
-        ('[', Symbol::SquareBracketLeft),
-        (']', Symbol::SquareBracketRight),
-        ('~', Symbol::Tilde),
-        ('_', Symbol::Underscore),
-        ('{', Symbol::CurlyBracketLeft),
-        ('}', Symbol::CurlyBracketRight),
-    ])
-});
-
-pub static _MATH_SYMBOL_MAP: Lazy<HashMap<char, _MathSymbol>> = Lazy::new(|| {
-    HashMap::from([
-        ('&', _MathSymbol::Ampersand),
-        ('*', _MathSymbol::Asterisk),
-        ('^', _MathSymbol::Caret),
-        ('=', _MathSymbol::Equal),
-        ('>', _MathSymbol::GreaterThan),
-        ('<', _MathSymbol::LessThan),
-        ('-', _MathSymbol::Minus),
-        ('%', _MathSymbol::Percent),
-        ('|', _MathSymbol::Pipe),
-        ('+', _MathSymbol::Plus),
-        ('/', _MathSymbol::Slash),
-    ])
-});
 
 pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
     HashMap::from([
@@ -179,6 +207,7 @@ pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
         ("||", DoubleSymbol::DoublePipe),
         ("++", DoubleSymbol::DoublePlus),
         ("//", DoubleSymbol::DoubleSlash),
+        ("/*", DoubleSymbol::MultilineComment),
         ("->", DoubleSymbol::Pointer),
         (">>", DoubleSymbol::DoubleGreaterThan),
         ("<<", DoubleSymbol::DoubleLessThan),
@@ -198,37 +227,3 @@ pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
         ("|=", DoubleSymbol::PipeEqual),
     ])
 });
-
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum TokenType {
-    Keyword(String),
-    Operator(char),
-    Literal(String),
-    Identifier(String),
-    Punctuation(char),
-    EOF,
-}
-
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct Token<'a> {
-    pub token_type: TokenType,
-    pub value: Option<String>,
-    pub line: usize,
-    pub next: Option<&'a Token<'a>>,
-    pub prev: Option<&'a Token<'a>>,
-}
-
-impl fmt::Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TokenType::Keyword(kw) => write!(f, "Keyword({})", kw),
-            TokenType::Operator(op) => write!(f, "Operator({})", op),
-            TokenType::Literal(lit) => write!(f, "Literal({})", lit),
-            TokenType::Identifier(id) => write!(f, "Identifier({})", id),
-            TokenType::Punctuation(punc) => write!(f, "Punctuation({})", punc),
-            TokenType::EOF => write!(f, "EOF"),
-        }
-    }
-}

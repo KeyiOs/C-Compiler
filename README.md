@@ -79,7 +79,6 @@ The compiler also supports the following escape sequences as defined in the stan
 
 | Escape Sequence | Description                 |
 |-----------------|-----------------------------|
-| `\?`            | Question mark               |
 | `\a`            | Audible bell                |
 | `\b`            | Backspace                   |
 | `\f`            | New page                    |
@@ -90,7 +89,10 @@ The compiler also supports the following escape sequences as defined in the stan
 
 <u>**Limitations**</u>
 
-This compiler does **not** support *numeric escape sequences* and *Unicode*. Future updates may address these limitations to enhance compatibility with the C23 standard.
+- **Multi-character character literals are not supported.**  
+  Character constants must contain exactly **one character** after escape processing.  
+  Constructs like `'abcd'` or `'\"abc'` are invalid and will result in a compilation error.  
+  This restriction ensures consistent behavior and improves portability.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
