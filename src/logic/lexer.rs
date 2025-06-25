@@ -6,10 +6,12 @@ use std::str::{Chars, FromStr};
 
 /* * * * * * * * * * * * * * * * * * * */
 /*               TODO                  */
-/*                                     */
-/* Finish Preprocessor # Line Markers  */
-/* & Add File name into Error messages */
-/* Header Files                        */
+/* * * * * * * * * * * * * * * * * * * */
+/* Add File name into Error messages   */
+/* Update Number Handling              */
+/* Hex Numbers                         */
+/* Clean ' ' , " " & Escape Sequence   */
+/* Clean Symbol_Map Match              */
 /* * * * * * * * * * * * * * * * * * * */
 
 
@@ -17,24 +19,25 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
     let mut token = token_head;
     let mut chars = source.chars().peekable();
     let mut buffer = String::new();
-    let mut line = 1;
     let mut start_of_line = true;
+    let mut has_decimal = false;
+    let mut line = 1;
 
     while let Some(character) = chars.next() {
         if character.is_ascii_alphabetic() || character == '_' {
             buffer.push(character);
 
             while let Some(&next_char) = chars.peek() {
-                if next_char.is_ascii_alphanumeric() || next_char == '_' {
-                    buffer.push(chars.next().unwrap());
-                } else {
+                if !next_char.is_ascii_alphanumeric() && next_char != '_' {
                     break;
                 }
+                
+                buffer.push(chars.next().unwrap());
             }
 
             if Keyword::from_str(buffer.as_str()).is_ok() {
                 token = Token::set(token, TokenType::Keyword(buffer.clone()), 0);
-            } else if buffer.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            } else {
                 token = Token::set(token, TokenType::Identifier(buffer.clone()), 0);
             }
             
@@ -43,7 +46,14 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
             buffer.push(character);
             
             while let Some(&next_char) = chars.peek() {
-                if next_char.is_ascii_digit() || next_char == '.' {
+                if next_char.is_ascii_digit() {
+                    buffer.push(chars.next().unwrap());
+                } else if next_char == '.' {
+                    if has_decimal {
+                        return Err(format!("Multiple decimal points in number on line {}", line).into());
+                    }
+
+                    has_decimal = true;
                     buffer.push(chars.next().unwrap());
                 } else if next_char == 'e' || next_char == 'E' {
                     buffer.push(chars.next().unwrap());
@@ -92,6 +102,8 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
             }
 
             token = Token::set(token, TokenType::Literal(buffer.clone()), 0);
+
+            has_decimal = false;
             buffer.clear();
         } else if character.is_whitespace() {
             if character == '\n' {
@@ -103,34 +115,22 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
         } else if SYMBOL_MAP.contains_key(&character) {
             if character == '\'' {
                 if let Some(character) = chars.next() {
+                    let mut string_lit = String::new();
+
                     if character == '\'' {
                         return Err(format!("Empty character literal on line {}", line).into());
+                    } else if character == '\\' {
+                        if let Some(escape_char) = chars.next() {
+                            string_lit.push('\\');
+                            process_escape_sequence(&mut string_lit, escape_char, &mut chars, line)?;
+                        }
+                    } else {
+                        string_lit.push(character);
                     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                     if chars.next() == Some('\'') {
-                        token = Token::set(token, TokenType::Literal(next_char.to_string()), 0);
-                        ok = true;
-                        break;
+                        token = Token::set(token, TokenType::Literal(string_lit), 0);
+                        continue;
                     } else {
                         while let Some(next_char) = chars.next() {
                             if next_char == '\n' {
@@ -142,30 +142,6 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
 
                         return Err(format!("Unterminated character literal on line {}", line).into());
                     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
-
-
-
-
                 } else {
                     return Err(format!("Unterminated character literal on line {}", line).into());
                 }
@@ -179,15 +155,12 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                             let mut lookahead = chars.clone();
 
                             while let Some(&c) = lookahead.peek() {
-                                if c == '\n' || c == '\r' {
-                                    return Err(format!("Unterminated string literal on line {}", line).into());
+                                if !c.is_whitespace() {
+                                    break;
+                                    
                                 }
 
-                                if c.is_whitespace() {
-                                    lookahead.next();
-                                } else {
-                                    break;
-                                }
+                                lookahead.next();
                             }
 
                             if let Some(&'"') = lookahead.peek() {
@@ -203,107 +176,16 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                             break;
                         }
                         '\\' => {
-                            let Some(escaped) = chars.next() else {
+                            let Some(escape_char) = chars.next() else {
                                 return Err(format!("Unmatched escape sequence on line {}", line).into());
                             };
 
-                            if escaped == '\n' || escaped == '\r' {
+                            if escape_char == '\n' || escape_char == '\r' {
                                 chars.next();
                                 continue;
                             }
 
-                            match escaped {
-                                'a' => string_lit.push('\x07'),
-                                'b' => string_lit.push('\x08'),
-                                'f' => string_lit.push('\x0C'),
-                                'n' => string_lit.push('\n'),
-                                'r' => string_lit.push('\r'),
-                                't' => string_lit.push('\t'),
-                                'v' => string_lit.push('\x0B'),
-                                '\\' => string_lit.push('\\'),
-                                '\'' => string_lit.push('\''),
-                                '"'  => string_lit.push('"'),
-                                
-                                'x' => {
-                                    let mut hex_digits = String::new();
-
-                                    for _ in 0..2 {
-                                        if let Some(&c) = chars.peek() {
-                                            if c.is_ascii_hexdigit() {
-                                                hex_digits.push(c);
-                                                chars.next();
-                                            } else {
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    if hex_digits.is_empty() {
-                                        return Err(format!("Expected hex digits after \\x on line {}", line).into());
-                                    }
-
-                                    let value = u8::from_str_radix(&hex_digits, 16)
-                                        .map_err(|_| format!("Invalid hex escape: \\x{} on line {}", hex_digits, line))?;
-                                    string_lit.push(value as char);
-
-                                    println!("Hex escape: \\x{} -> {}", hex_digits, value);
-                                }
-
-                                'u' => {
-                                    if let Some('{') = chars.next() {
-                                        let mut unicode_digits = String::new();
-
-                                        while let Some(&c) = chars.peek() {
-                                            if c == '}' {
-                                                chars.next(); // consume '}'
-                                                break;
-                                            } else if c.is_ascii_hexdigit() {
-                                                unicode_digits.push(c);
-                                                chars.next();
-                                            } else {
-                                                return Err(format!("Invalid character '{}' in unicode escape on line {}", c, line).into());
-                                            }
-                                        }
-
-                                        if unicode_digits.is_empty() {
-                                            return Err(format!("Empty unicode escape on line {}", line).into());
-                                        }
-
-                                        let codepoint = u32::from_str_radix(&unicode_digits, 16)
-                                            .map_err(|_| format!("Invalid unicode escape: \\u{{{}}} on line {}", unicode_digits, line))?;
-
-                                        if let Some(ch) = char::from_u32(codepoint) {
-                                            string_lit.push(ch);
-                                        } else {
-                                            return Err(format!("Invalid unicode codepoint: \\u{{{}}} on line {}", unicode_digits, line).into());
-                                        }
-                                    } else {
-                                        return Err(format!("Expected '{{' after \\u on line {}", line).into());
-                                    }
-                                }
-
-                                '0'..='7' => {
-                                    let mut oct_digits = String::new();
-                                    oct_digits.push(escaped); // first digit
-
-                                    for _ in 0..2 {
-                                        if let Some(&c) = chars.peek() {
-                                            if c >= '0' && c <= '7' {
-                                                chars.next();
-                                                oct_digits.push(c);
-                                            } else {
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    let value = u8::from_str_radix(&oct_digits, 8)
-                                        .map_err(|_| format!("Invalid octal escape: \\{} on line {}", oct_digits, line))?;
-                                    string_lit.push(value as char);
-                                }
-                                
-                                _ => return Err(format!("Invalid escape sequence: \\{} on line {}", escaped, line).into()),
-                            }
+                            process_escape_sequence(&mut string_lit, escape_char, &mut chars, line)?;
                         }
 
                         '\n' => return Err(format!("Unterminated string literal on line {}", line).into()),
@@ -386,4 +268,104 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
     };
 
     Ok(())
+}
+
+
+fn process_escape_sequence(string_lit: &mut String, escape_char: char, chars: &mut Peekable<Chars<'_>>, line: usize) -> Result<(), Box<dyn std::error::Error>> {
+    match escape_char {
+        'a' => { string_lit.push('\x07'); return Ok(()); }
+        'b' => { string_lit.push('\x08'); return Ok(()); }
+        'f' => { string_lit.push('\x0C'); return Ok(()); }
+        'n' => { string_lit.push('\n'); return Ok(()); }
+        'r' => { string_lit.push('\r'); return Ok(()); }
+        't' => { string_lit.push('\t'); return Ok(()); }
+        'v' => { string_lit.push('\x0B'); return Ok(()); }
+        '\\' => { string_lit.push('\\'); return Ok(()); }
+        '\'' => { string_lit.push('\''); return Ok(()); }
+        '"'  => { string_lit.push('"'); return Ok(()); }
+        
+        'x' => {
+            let mut hex_digits = String::new();
+
+            for _ in 0..2 {
+                if let Some(&c) = chars.peek() {
+                    if c.is_ascii_hexdigit() {
+                        hex_digits.push(c);
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            if hex_digits.is_empty() {
+                return Err(format!("Expected hex digits after \\x on line {}", line).into());
+            }
+
+            let value = u8::from_str_radix(&hex_digits, 16)
+                .map_err(|_| format!("Invalid hex escape: \\x{} on line {}", hex_digits, line))?;
+            string_lit.push(value as char);
+
+            return Ok(());
+        }
+
+        'u' => {
+            if let Some('{') = chars.next() {
+                let mut unicode_digits = String::new();
+
+                while let Some(&c) = chars.peek() {
+                    if c == '}' {
+                        chars.next();
+                        break;
+                    } else if c.is_ascii_hexdigit() {
+                        unicode_digits.push(c);
+                        chars.next();
+                    } else {
+                        return Err(format!("Invalid character '{}' in unicode escape on line {}", c, line).into());
+                    }
+                }
+
+                if unicode_digits.is_empty() {
+                    return Err(format!("Empty unicode escape on line {}", line).into());
+                }
+
+                let codepoint = u32::from_str_radix(&unicode_digits, 16)
+                    .map_err(|_| format!("Invalid unicode escape: \\u{{{}}} on line {}", unicode_digits, line))?;
+
+                if let Some(ch) = char::from_u32(codepoint) {
+                    string_lit.push(ch);
+                } else {
+                    return Err(format!("Invalid unicode codepoint: \\u{{{}}} on line {}", unicode_digits, line).into());
+                }
+
+                return Ok(());
+            } else {
+                return Err(format!("Expected '{{' after \\u on line {}", line).into());
+            }
+        }
+
+        '0'..='7' => {
+            let mut oct_digits = String::new();
+            oct_digits.push(escape_char);
+
+            for _ in 0..2 {
+                if let Some(&c) = chars.peek() {
+                    if c >= '0' && c <= '7' {
+                        chars.next();
+                        oct_digits.push(c);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            let value = u8::from_str_radix(&oct_digits, 8)
+                .map_err(|_| format!("Invalid octal escape: \\{} on line {}", oct_digits, line))?;
+            string_lit.push(value as char);
+
+            return Ok(());
+        }
+        
+        _ => return Err(format!("Invalid escape sequence: \\{} on line {}", escape_char, line).into()),
+    }
 }
