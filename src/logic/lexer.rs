@@ -1,27 +1,29 @@
-use crate::data_structures::keywords::{Keyword, DOUBLE_SYMBOL_MAP, SYMBOL_MAP};
+use crate::data_structures::keywords::{Keyword, DOUBLE_SYMBOL_MAP, SYMBOL_MAP, TRIPLE_SYMBOL_MAP};
 use crate::data_structures::objects::{Token, TokenType};
-use std::iter::Peekable;
+use crate::logic::utils::{CharExt, StrExt};
 use std::str::{Chars, FromStr};
+use std::iter::Peekable;
 
 
 /* * * * * * * * * * * * * * * * * * * */
 /*               TODO                  */
 /* * * * * * * * * * * * * * * * * * * */
 /* Add File name into Error messages   */
-/* Update Number Handling              */
-/* Hex Numbers                         */
-/* Clean ' ' , " " & Escape Sequence   */
-/* Clean Symbol_Map Match              */
+/* Remove while let Some() Nesting     */
 /* * * * * * * * * * * * * * * * * * * */
 
 
 pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let mut token = token_head;
-    let mut chars = source.chars().peekable();
-    let mut buffer = String::new();
-    let mut start_of_line = true;
-    let mut has_decimal = false;
-    let mut line = 1;
+    /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
+    /**/ /*                        Lexer State Variables                        */ /**/
+    /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
+    /**/ let mut token = token_head;                                   /**/
+    /**/ let mut chars = source.chars().peekable();    /**/
+    /**/ let mut buffer = String::new();                                   /**/
+    /**/ let mut start_of_line = true;                                       /**/
+    /**/ let mut has_decimal = false;                                        /**/
+    /**/ let mut line = 1;                                                  /**/
+    /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
 
     while let Some(character) = chars.next() {
         if character.is_ascii_alphabetic() || character == '_' {
@@ -31,7 +33,7 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                 if !next_char.is_ascii_alphanumeric() && next_char != '_' {
                     break;
                 }
-                
+
                 buffer.push(chars.next().unwrap());
             }
 
@@ -42,60 +44,114 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
             }
             
             buffer.clear();
-        } else if character.is_numeric() {
+        } else if character.is_numeric() || (character == '.' && chars.peek().map_or(false, |c| c.is_ascii_digit())) {
+            if buffer.is_empty() && character == '0' {
+                let Some(&next_char) = chars.peek() else {
+                    return Err(format!("Unexpected end of input after '0' on line {}", line).into());
+                };
+
+                if next_char >= '0' && next_char <= '7' {
+                    let escape_char = chars.next().unwrap();
+                    let oct_digits = format!("0{}", process_octal(&mut chars, escape_char));
+                    let oct_value = u32::from_str_radix(&oct_digits, 8).map_err(|_| format!("Invalid octal number '{}' on line {}", oct_digits, line))?;
+
+                    token = Token::set(token, TokenType::Literal(oct_value.to_string()), 0);
+                    start_of_line = false;
+
+                    continue;
+                } else if next_char == 'x' || next_char == 'X' {
+                    chars.next();
+                    let mut hex_digits = String::new();
+
+                    while let Some(&c) = chars.peek() {
+                        if !c.is_digit(16) {
+                            break;
+                        }
+
+                        hex_digits.push(c);
+                        chars.next();
+                    }
+
+                    if hex_digits.is_empty() {
+                        return Err(format!("Invalid hex number on line {}", line).into());
+                    }
+
+                    let hex_value = u32::from_str_radix(&hex_digits, 16).map_err(|_| format!("Invalid hex number '{}' on line {}", hex_digits, line))?;
+
+                    token = Token::set(token, TokenType::Literal(hex_value.to_string()), 0);
+                    start_of_line = false;
+
+                    continue;
+                }
+            }
+
             buffer.push(character);
-            
+
+            if character == '.' {
+                has_decimal = true;
+            }
+
             while let Some(&next_char) = chars.peek() {
                 if next_char.is_ascii_digit() {
                     buffer.push(chars.next().unwrap());
-                } else if next_char == '.' {
+                } else if next_char.is_dot() {
                     if has_decimal {
                         return Err(format!("Multiple decimal points in number on line {}", line).into());
                     }
 
                     has_decimal = true;
                     buffer.push(chars.next().unwrap());
-                } else if next_char == 'e' || next_char == 'E' {
+                } else if next_char.is_sci_notation() {
                     buffer.push(chars.next().unwrap());
 
-                    if let Some(&sign) = chars.peek() {
-                        if sign == '+' || sign == '-' {
-                            buffer.push(chars.next().unwrap());
-                        }
+                    if matches!(chars.peek(), Some(&c) if c == '+' || c == '-') {
+                        buffer.push(chars.next().unwrap());
                     }
 
                     let mut found_digit = false;
                     while let Some(&exp_digit) = chars.peek() {
-                        if exp_digit.is_ascii_digit() {
-                            found_digit = true;
-                            buffer.push(chars.next().unwrap());
-                        } else {
+                        if !exp_digit.is_ascii_digit() {
                             break;
                         }
+
+                        if !found_digit {
+                            found_digit = true;
+                        }
+
+                        buffer.push(chars.next().unwrap());
                     }
 
                     if !found_digit {
                         return Err(format!("Invalid exponent in number on line {}", line).into());
                     }
                 } else if next_char.is_ascii_alphabetic() {
-                    let suffix_char = chars.next().unwrap();
-                    let suffix_char_lower = suffix_char.to_ascii_lowercase();
-                    if matches!(suffix_char_lower, 'u' | 'l' | 'f') {
-                        buffer.push(suffix_char);
+                    let mut suffix = String::new();
 
-                        if let Some(&next_suffix) = chars.peek() {
-                            let next_suffix_lower = next_suffix.to_ascii_lowercase();
-                            if (suffix_char_lower == 'u' && (next_suffix_lower == 'l')) ||
-                            (suffix_char_lower == 'l' && (next_suffix_lower == 'u')) ||
-                            (suffix_char_lower == 'l' && (next_suffix_lower == 'f')) {
-                                buffer.push(chars.next().unwrap());
+                    for _ in 0..3 {
+                        if let Some(&c) = chars.peek() {
+                            let c_lower = c.to_ascii_lowercase();
+
+                            if !c_lower.is_suffix_char() {
+                                break;
                             }
+
+                            suffix.push(chars.next().unwrap());
+                        } else {
+                            break;
                         }
-                    } else {
-                        return Err(format!("Invalid suffix in number on line {}", line).into());
                     }
 
-                    break;
+                    if let Some(&next) = chars.peek() {
+                        if !next.is_whitespace() && !SYMBOL_MAP.contains_key(&next) {
+                            return Err(format!("Invalid number suffix on line {}", line).into());
+                        }
+                    }
+
+                    if !suffix.is_num_suffix() {
+                        return Err(format!("Invalid number suffix on line {}", line).into());
+                    }
+
+                    buffer.push_str(&suffix);
                 } else {
                     break;
                 }
@@ -109,28 +165,30 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
             if character == '\n' {
                 line += 1;
                 start_of_line = true;
+            } else {
+                start_of_line = false;
             }
 
             continue;
         } else if SYMBOL_MAP.contains_key(&character) {
-            if character == '\'' {
+            if character.is_char_literal() {
                 if let Some(character) = chars.next() {
-                    let mut string_lit = String::new();
+                    let mut char_literal = String::new();
 
                     if character == '\'' {
                         return Err(format!("Empty character literal on line {}", line).into());
                     } else if character == '\\' {
                         if let Some(escape_char) = chars.next() {
-                            string_lit.push('\\');
-                            process_escape_sequence(&mut string_lit, escape_char, &mut chars, line)?;
+                            process_escape_sequence(&mut char_literal, escape_char, &mut chars, line)?;
+                        } else {
+                            return Err(format!("Unterminated character literal on line {}", line).into());
                         }
                     } else {
-                        string_lit.push(character);
+                        char_literal.push(character);
                     }
 
                     if chars.next() == Some('\'') {
-                        token = Token::set(token, TokenType::Literal(string_lit), 0);
-                        continue;
+                        token = Token::set(token, TokenType::Literal(char_literal), 0);
                     } else {
                         while let Some(next_char) = chars.next() {
                             if next_char == '\n' {
@@ -145,7 +203,7 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                 } else {
                     return Err(format!("Unterminated character literal on line {}", line).into());
                 }
-            } else if character == '"' {
+            } else if character.is_string_literal() {
                 let mut string_lit = String::new();
                 let mut ok = false;
 
@@ -157,35 +215,37 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                             while let Some(&c) = lookahead.peek() {
                                 if !c.is_whitespace() {
                                     break;
-                                    
                                 }
 
                                 lookahead.next();
                             }
 
-                            if let Some(&'"') = lookahead.peek() {
-                                for _ in 0..(chars.clone().count() - lookahead.clone().count()) {
+                            if lookahead.peek() != Some(&'"') {
+                                token = Token::set(token, TokenType::Literal(string_lit), 0);
+                                ok = true;
+
+                                break;
+                            }
+
+                            for _ in 0..(chars.clone().count() - lookahead.clone().count()) {
+                                chars.next();
+                            }
+                            
+                            chars.next();
+
+                            continue;
+                        } '\\' => {
+                            if let Some(escape_char) = chars.next() {
+                                if escape_char == '\n' || escape_char == '\r' {
                                     chars.next();
+
+                                    continue;
                                 }
-                                chars.next();
-                                continue;
-                            }
 
-                            token = Token::set(token, TokenType::Literal(string_lit), 0);
-                            ok = true;
-                            break;
-                        }
-                        '\\' => {
-                            let Some(escape_char) = chars.next() else {
+                                process_escape_sequence(&mut string_lit, escape_char, &mut chars, line)?;
+                            } else {
                                 return Err(format!("Unmatched escape sequence on line {}", line).into());
-                            };
-
-                            if escape_char == '\n' || escape_char == '\r' {
-                                chars.next();
-                                continue;
                             }
-
-                            process_escape_sequence(&mut string_lit, escape_char, &mut chars, line)?;
                         }
 
                         '\n' => return Err(format!("Unterminated string literal on line {}", line).into()),
@@ -197,53 +257,29 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
                 if !ok {
                     return Err(format!("Unterminated string literal on line {}", line).into());
                 }
-            } else if let Some(&next_char) = chars.peek() {
-                let double = [character, next_char].iter().collect::<String>();
+            } else if let Some(&second_char) = chars.peek() {
+                let mut chars_clone = chars.clone();
+                chars_clone.next();
 
-                if double == "//" {
-                    while let Some(&ch) = chars.peek() {
-                        if ch == '\n' {
-                            line += 1;
-                            break;
+                if let Some(third_char) = chars_clone.next() {
+                    let triple_symbol = format!("{}{}{}", character, second_char, third_char);
+
+                    if TRIPLE_SYMBOL_MAP.contains_key(triple_symbol.as_str()) {
+                        for _ in 0..2 {
+                            chars.next();
                         }
-                        
-                        chars.next();
-                    }
 
-                    continue;
-                } else if double == "/*" {
-                    while let Some(ch) = chars.next() {
-                        if ch == '*' {
-                            if let Some(&next) = chars.peek() {
-                                if next == '/' {
-                                    chars.next();
-                                    break;
-                                }
-                            }
-                        } else if ch == '\n' {
-                            line += 1;
-                        } else if ch == '\0' {
-                            return Err(format!("Unterminated multiline comment on line {}", line).into());
-                        }
-                    }
-                    continue;
-                }
+                        token = Token::set(token, TokenType::Operator(triple_symbol), line);
+                        start_of_line = false;
 
-                let mut char_iter = chars.clone();
-                char_iter.next();
-
-                if let Some(third_char) = char_iter.next() {
-                    let triple = format!("{}{}{}", character, next_char, third_char);
-                    if DOUBLE_SYMBOL_MAP.contains_key(triple.as_str()) {
-                        token = Token::set(token, TokenType::Operator(triple), line);
-                        chars.next();
-                        chars.next();
                         continue;
                     }
                 }
 
-                if DOUBLE_SYMBOL_MAP.contains_key(double.as_str()) {
-                    token = Token::set(token, TokenType::Operator(double), 0);
+                let double_symbol = [character, second_char].iter().collect::<String>();
+
+                if DOUBLE_SYMBOL_MAP.contains_key(double_symbol.as_str()) {
+                    token = Token::set(token, TokenType::Operator(double_symbol), 0);
                     chars.next();
                 } else {
                     token = Token::set(token, TokenType::Operator(character.to_string()), 0);
@@ -288,84 +324,92 @@ fn process_escape_sequence(string_lit: &mut String, escape_char: char, chars: &m
             let mut hex_digits = String::new();
 
             for _ in 0..2 {
-                if let Some(&c) = chars.peek() {
-                    if c.is_ascii_hexdigit() {
-                        hex_digits.push(c);
-                        chars.next();
-                    } else {
-                        break;
-                    }
+                let Some(&c) = chars.peek() else {
+                    break;
+                };
+
+                if !c.is_ascii_hexdigit() {
+                    break;
                 }
+
+                hex_digits.push(c);
+                chars.next();
             }
 
             if hex_digits.is_empty() {
                 return Err(format!("Expected hex digits after \\x on line {}", line).into());
             }
 
-            let value = u8::from_str_radix(&hex_digits, 16)
-                .map_err(|_| format!("Invalid hex escape: \\x{} on line {}", hex_digits, line))?;
+            let value = u8::from_str_radix(&hex_digits, 16).map_err(|_| format!("Invalid hex escape: \\x{} on line {}", hex_digits, line))?;
             string_lit.push(value as char);
 
             return Ok(());
         }
 
         'u' => {
-            if let Some('{') = chars.next() {
-                let mut unicode_digits = String::new();
-
-                while let Some(&c) = chars.peek() {
-                    if c == '}' {
-                        chars.next();
-                        break;
-                    } else if c.is_ascii_hexdigit() {
-                        unicode_digits.push(c);
-                        chars.next();
-                    } else {
-                        return Err(format!("Invalid character '{}' in unicode escape on line {}", c, line).into());
-                    }
-                }
-
-                if unicode_digits.is_empty() {
-                    return Err(format!("Empty unicode escape on line {}", line).into());
-                }
-
-                let codepoint = u32::from_str_radix(&unicode_digits, 16)
-                    .map_err(|_| format!("Invalid unicode escape: \\u{{{}}} on line {}", unicode_digits, line))?;
-
-                if let Some(ch) = char::from_u32(codepoint) {
-                    string_lit.push(ch);
-                } else {
-                    return Err(format!("Invalid unicode codepoint: \\u{{{}}} on line {}", unicode_digits, line).into());
-                }
-
-                return Ok(());
-            } else {
+            let Some('{') = chars.next() else {
                 return Err(format!("Expected '{{' after \\u on line {}", line).into());
+            };
+
+            let mut unicode_digits = String::new();
+
+            while let Some(&c) = chars.peek() {
+                if c == '}' {
+                    chars.next();
+                    break;
+                } else if c.is_ascii_hexdigit() {
+                    unicode_digits.push(c);
+                    chars.next();
+                } else {
+                    return Err(format!("Invalid character '{}' in unicode escape on line {}", c, line).into());
+                }
             }
+
+            if unicode_digits.is_empty() {
+                return Err(format!("Empty unicode escape on line {}", line).into());
+            }
+
+            let codepoint = u32::from_str_radix(&unicode_digits, 16).map_err(|_| format!("Invalid unicode escape: \\u{{{}}} on line {}", unicode_digits, line))?;
+
+            let Some(ch) = char::from_u32(codepoint) else {
+                return Err(format!("Invalid unicode codepoint: \\u{{{}}} on line {}", unicode_digits, line).into());
+            };
+
+            string_lit.push(ch);
+
+            return Ok(());
         }
 
         '0'..='7' => {
-            let mut oct_digits = String::new();
-            oct_digits.push(escape_char);
-
-            for _ in 0..2 {
-                if let Some(&c) = chars.peek() {
-                    if c >= '0' && c <= '7' {
-                        chars.next();
-                        oct_digits.push(c);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            let value = u8::from_str_radix(&oct_digits, 8)
-                .map_err(|_| format!("Invalid octal escape: \\{} on line {}", oct_digits, line))?;
-            string_lit.push(value as char);
+            let oct_digits = process_octal(chars, escape_char);
+            let oct_value = u8::from_str_radix(&oct_digits, 8).map_err(|_| format!("Invalid octal escape: \\{} on line {}", oct_digits, line))?;
+            
+            string_lit.push(oct_value as char);
 
             return Ok(());
         }
         
         _ => return Err(format!("Invalid escape sequence: \\{} on line {}", escape_char, line).into()),
     }
+}
+
+
+fn process_octal(chars: &mut Peekable<Chars<'_>>, escape_char: char) -> String {
+    let mut oct_digits = String::new();
+    oct_digits.push(escape_char);
+
+    for _ in 0..2 {
+        let Some(&c) = chars.peek() else {
+            break;
+        };
+
+        if c < '0' || c > '7' {
+            break;
+        }
+
+        chars.next();
+        oct_digits.push(c);
+    }
+
+    oct_digits
 }

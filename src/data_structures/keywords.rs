@@ -178,8 +178,6 @@ pub enum DoubleSymbol {
     DoubleMinus,
     DoublePipe,
     DoublePlus,
-    DoubleSlash,
-    MultilineComment,
     Pointer,
     DoubleGreaterThan,
     DoubleLessThan,
@@ -206,8 +204,6 @@ pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
         ("--", DoubleSymbol::DoubleMinus),
         ("||", DoubleSymbol::DoublePipe),
         ("++", DoubleSymbol::DoublePlus),
-        ("//", DoubleSymbol::DoubleSlash),
-        ("/*", DoubleSymbol::MultilineComment),
         ("->", DoubleSymbol::Pointer),
         (">>", DoubleSymbol::DoubleGreaterThan),
         ("<<", DoubleSymbol::DoubleLessThan),
@@ -225,5 +221,19 @@ pub static DOUBLE_SYMBOL_MAP: Lazy<HashMap<&str, DoubleSymbol>> = Lazy::new(|| {
         ("&=", DoubleSymbol::AmpersandEqual),
         ("^=", DoubleSymbol::CaretEqual),
         ("|=", DoubleSymbol::PipeEqual),
+    ])
+});
+
+
+pub enum TripleSymbol {
+    LeftShiftEqual,
+    RightShiftEqual,
+}
+
+
+pub static TRIPLE_SYMBOL_MAP: Lazy<HashMap<&str, TripleSymbol>> = Lazy::new(|| {
+    HashMap::from([
+        ("<<=", TripleSymbol::LeftShiftEqual),
+        (">>=", TripleSymbol::RightShiftEqual),
     ])
 });
