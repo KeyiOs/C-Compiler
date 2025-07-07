@@ -5,7 +5,7 @@ use data_structures::objects::Token;
 use logic::lexer::lexer_start;
 use std::process::Command;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 
 fn main() {
@@ -22,8 +22,8 @@ fn main() {
     let mut token = Token::init();
     let error = lexer_start(&mut token, &preprocessed_source);
 
-    if error.is_err() {
-        println!("Error: {:?}", error);
+    if let Err(e) = error {
+        println!("\nError: {:?}\n", e);
     } else if DEBUG {
         debug_tokens(&token);
     } else {
