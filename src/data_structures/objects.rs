@@ -1,16 +1,18 @@
 use std::fmt;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 
 #[derive(Clone)]
 pub struct Token {
     pub token_type: Option<TokenType>,
     pub line: usize,
-    pub next: Option<Box<Token>>,
-    pub prev: Option<Box<Token>>,
+    pub next: Option<Rc<RefCell<Token>>>,
+    pub prev: Option<Rc<RefCell<Token>>>,
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TokenType {
     Keyword(String),
     Operator(String),
@@ -32,33 +34,36 @@ impl fmt::Display for TokenType {
 
 
 impl Token {
-    pub fn init() -> Token {
-        Token {
+    pub fn init() -> Rc<RefCell<Token>> {
+        Rc::new(RefCell::new(Token {
             token_type: None,
             line: 0,
             next: None,
             prev: None,
-        }
+        }))
     }
 
     pub fn set(
-        token: &mut Token,
+        token: Rc<RefCell<Token>>,
         token_type: TokenType,
         line: usize,
-    ) -> &mut Token {
-        if token.token_type.is_none() {
-            token.token_type = Some(token_type);
-            token.line = line;
-            token.prev = Some(Box::new(Token::init()));
-            return token;
-        } else {
-            let mut token_new = Token::init();
-            token_new.token_type = Some(token_type);
-            token_new.line = line;
-            token_new.prev = token.prev.clone();
+    ) -> Rc<RefCell<Token>> {
+        let mut tok = token.borrow_mut();
 
-            token.next = Some(Box::new(token_new));
-            return token.next.as_mut().unwrap();
+        if tok.token_type.is_none() {
+            tok.token_type = Some(token_type);
+            tok.line = line;
+            return Rc::clone(&token);
+        } else {
+            let new_token = Rc::new(RefCell::new(Token {
+                token_type: Some(token_type),
+                line,
+                next: None,
+                prev: Some(Rc::clone(&token)),
+            }));
+
+            tok.next = Some(Rc::clone(&new_token));
+            return new_token;
         }
     }
 }

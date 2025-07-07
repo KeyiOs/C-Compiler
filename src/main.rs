@@ -3,13 +3,16 @@ mod data_structures;
 
 use data_structures::objects::Token;
 use logic::lexer::lexer_start;
-use std::process::Command;
+use std::{cell::RefCell, process::Command, rc::Rc};
+
+use crate::data_structures::objects::TokenType;
 
 const DEBUG: bool = false;
-
+const MAX_TO_PRINT: usize = 85;
+const PRINT_TYPE: u8 = 1; // 1=Keyword, 2=Operator, 3=Literal, 4=Identifier
 
 fn main() {
-    let preprocessed_source = match preprocess_source("./examples/test.c") {
+    let preprocessed_source = match preprocess_source("./examples/oddEven.c") {
         Ok(src) => src,
         Err(e) => {
             eprintln!("Preprocessing failed: {}", e);
@@ -46,14 +49,32 @@ pub fn preprocess_source(file_path: &str) -> Result<String, Box<dyn std::error::
 }
 
 
-pub fn debug_tokens(token: &Token) {
-    let mut current = Some(token);
+pub fn debug_tokens(token: &Rc<RefCell<Token>>) {
+    let mut tokens = Vec::new();
+    let mut current = Some(Rc::clone(token)); // clone Rc to own it
 
     while let Some(tok) = current {
-        if let Some(token_type) = &tok.token_type {
-            println!("{}", token_type);
-        }
+        tokens.push(Rc::clone(&tok)); // store owned Rc
 
-        current = tok.next.as_deref();
+        let borrowed = tok.borrow();
+        current = borrowed.next.as_ref().map(Rc::clone);
+    }
+
+    let start = if tokens.len() > MAX_TO_PRINT { tokens.len() - MAX_TO_PRINT } else { 0 };
+    for (i, tok) in tokens[start..].iter().enumerate() {
+        let borrowed = tok.borrow();
+        if let Some(token_type) = &borrowed.token_type {
+            let should_print = match (PRINT_TYPE, token_type) {
+                (1, TokenType::Keyword(_)) => true,
+                (2, TokenType::Operator(_)) => true,
+                (3, TokenType::Literal(_)) => true,
+                (4, TokenType::Identifier(_)) => true,
+                _ => false,
+            };
+
+            if should_print {
+                println!("{}. {:?}", i + 1, token_type);
+            }
+        }
     }
 }

@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 int main() {
     char input; 
     char *even = "Even\n";
@@ -12,6 +14,6 @@ int main() {
                 write(1, odd, 4);
         }
     }
-
+    
     return 0;
 }

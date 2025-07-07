@@ -1,6 +1,8 @@
 use crate::data_structures::keywords::{Keyword, DOUBLE_SYMBOL_MAP, SYMBOL_MAP, TRIPLE_SYMBOL_MAP};
 use crate::data_structures::objects::{Token, TokenType};
 use crate::logic::utils::{CharExt, StrExt};
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::str::{Chars, FromStr};
 use std::iter::Peekable;
 
@@ -12,11 +14,11 @@ use std::iter::Peekable;
 /* * * * * * * * * * * * * * * * * * * */
 
 
-pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), Box<dyn std::error::Error>> {
     /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
     /**/ /*                        Lexer State Variables                        */ /**/
     /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
-    /**/ let mut token = token_head;                                               /**/
+    /**/ let mut token = Rc::clone(token_head);                                    /**/
     /**/ let mut chars = source.chars().peekable();                                /**/
     /**/ let mut buffer = String::new();                                           /**/
     /**/ let mut start_of_line = true;                                             /**/
@@ -24,7 +26,7 @@ pub fn lexer_start(token_head: &mut Token, source: &str) -> Result<(), Box<dyn s
     /**/ let mut line = 1;                                                         /**/
     /**/ let mut filename = String::new();                                         /**/
     /**/ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */ /**/
-
+    
     while let Some(character) = chars.next() {
         if character.is_ascii_alphabetic() || character == '_' {
             buffer.push(character);
