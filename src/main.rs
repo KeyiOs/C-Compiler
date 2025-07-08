@@ -3,7 +3,7 @@ mod data_structures;
 
 use data_structures::objects::Token;
 use logic::lexer::lexer_start;
-use std::{cell::RefCell, fs, process::Command, rc::Rc};
+use std::{cell::RefCell, fs, path::Path, process::Command, rc::Rc};
 
 use crate::data_structures::objects::TokenType;
 
@@ -24,7 +24,13 @@ fn main() {
 
     if PREP {
         let output_path = "debug/prep_out.c";
-        
+        let output_dir = Path::new(output_path).parent().unwrap();
+
+        if let Err(e) = fs::create_dir_all(output_dir) {
+            eprintln!("Failed to create directory {:?}: {}", output_dir, e);
+            return;
+        }
+
         if let Err(e) = fs::write(output_path, &preprocessed_source) {
             eprintln!("Failed to write preprocessed output: {}", e);
         } else {
