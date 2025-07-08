@@ -5,8 +5,6 @@ use std::str::FromStr;
 
 #[allow(dead_code)]
 pub enum Keyword {
-    Alignas,
-    Alignof,
     Auto,
     Bool,
     Break,
@@ -50,32 +48,14 @@ pub enum Keyword {
     Void,
     Volatile,
     While,
-    _Atomic,
-    _BitInt,
-    _Complex,
-    _Decimal128,
-    _Decimal32,
-    _Decimal64,
-    _Generic,
-    _Imaginary,
 }
 
-/*
-    _Alignas (deprecated in C23)
-    _Alignof (deprecated in C23)
-    _Bool (deprecated in C23)
-    _Noreturn (deprecated in C23)
-    _Static_assert (deprecated in C23)
-    _Thread_local (deprecated in C23)
-*/
 
 impl FromStr for Keyword {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "alignas" => Ok(Keyword::Alignas),
-            "alignof" => Ok(Keyword::Alignof),
             "auto" => Ok(Keyword::Auto),
             "bool" => Ok(Keyword::Bool),
             "break" => Ok(Keyword::Break),
@@ -119,14 +99,6 @@ impl FromStr for Keyword {
             "void" => Ok(Keyword::Void),
             "volatile" => Ok(Keyword::Volatile),
             "while" => Ok(Keyword::While),
-            "_Atomic" => Ok(Keyword::_Atomic),
-            "_BitInt" => Ok(Keyword::_BitInt),
-            "_Complex" => Ok(Keyword::_Complex),
-            "_Decimal128" => Ok(Keyword::_Decimal128),
-            "_Decimal32" => Ok(Keyword::_Decimal32),
-            "_Decimal64" => Ok(Keyword::_Decimal64),
-            "_Generic" => Ok(Keyword::_Generic),
-            "_Imaginary" => Ok(Keyword::_Imaginary),
             _ => Err(()),
         }
     }
