@@ -3,13 +3,15 @@ mod data_structures;
 
 use data_structures::objects::Token;
 use logic::lexer::lexer_start;
-use std::{cell::RefCell, process::Command, rc::Rc};
+use std::{cell::RefCell, fs, process::Command, rc::Rc};
 
 use crate::data_structures::objects::TokenType;
 
+const PREP: bool = false;
 const DEBUG: bool = false;
 const MAX_TO_PRINT: usize = 85;
-const PRINT_TYPE: u8 = 1; // 1=Keyword, 2=Operator, 3=Literal, 4=Identifier
+const PRINT_TYPE: u8 = 0; // 0=All, 1=Keyword, 2=Operator, 3=Literal, 4=Identifier
+
 
 fn main() {
     let preprocessed_source = match preprocess_source("./examples/oddEven.c") {
@@ -20,7 +22,15 @@ fn main() {
         }
     };
 
-    //println!("Preprocessed Source:\n{}", preprocessed_source);
+    if PREP {
+        let output_path = "debug/prep_out.c";
+        
+        if let Err(e) = fs::write(output_path, &preprocessed_source) {
+            eprintln!("Failed to write preprocessed output: {}", e);
+        } else {
+            println!("Preprocessed output written to {}", output_path);
+        }
+    }
 
     let mut token = Token::init();
     let error = lexer_start(&mut token, &preprocessed_source);
@@ -51,10 +61,10 @@ pub fn preprocess_source(file_path: &str) -> Result<String, Box<dyn std::error::
 
 pub fn debug_tokens(token: &Rc<RefCell<Token>>) {
     let mut tokens = Vec::new();
-    let mut current = Some(Rc::clone(token)); // clone Rc to own it
+    let mut current = Some(Rc::clone(token));
 
     while let Some(tok) = current {
-        tokens.push(Rc::clone(&tok)); // store owned Rc
+        tokens.push(Rc::clone(&tok));
 
         let borrowed = tok.borrow();
         current = borrowed.next.as_ref().map(Rc::clone);
@@ -65,6 +75,7 @@ pub fn debug_tokens(token: &Rc<RefCell<Token>>) {
         let borrowed = tok.borrow();
         if let Some(token_type) = &borrowed.token_type {
             let should_print = match (PRINT_TYPE, token_type) {
+                (0, _) => true, // 0 = print all
                 (1, TokenType::Keyword(_)) => true,
                 (2, TokenType::Operator(_)) => true,
                 (3, TokenType::Literal(_)) => true,

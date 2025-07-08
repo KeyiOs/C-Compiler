@@ -51,6 +51,38 @@ pub enum Keyword {
 }
 
 
+/*
+    Bool,
+    Constexpr,
+    False,
+    Nullptr,
+    Static_assert,
+    Thread_local,
+    True,
+    Typeof,
+    Typeof_unqual,
+*/
+
+
+/*
+    _Alignas (deprecated in C23)
+    _Alignof (deprecated in C23)
+    _Atomic
+    _BitInt
+    _Bool (deprecated in C23)
+    _Bool
+    _Complex
+    _Decimal128
+    _Decimal32
+    _Decimal64
+    _Generic
+    _Imaginary
+    _Noreturn (deprecated in C23)
+    _Static_assert (deprecated in C23)
+    _Thread_local (deprecated in C23)
+*/
+
+
 impl FromStr for Keyword {
     type Err = ();
 
