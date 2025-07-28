@@ -5,6 +5,7 @@ A compiler for the C programming language that outputs an Assembly (.asm) file, 
 This compiler uses a **standalone preprocessor** that handles `#include` directives, macro expansion, and conditional compilation (`#if`, `#ifdef`, etc.). This design allows for clear separation of preprocessing and compilation, improving modularity and easier debugging.
 
 ### License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Table of Contents
@@ -24,6 +25,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   - [Token](#token)
 
 ## Project Overview
+
 Stages of the compiler processing: 
 - **Preprocessing**: Handles macros and #include directives, producing expanded source code.
 - **Lexical Analysis (Lexer)**: Converts the preprocessed source code into a stream of tokens.
@@ -33,6 +35,7 @@ Stages of the compiler processing:
 - **Code Generation**: Generates assembly code based on the IR.
 
 ## Repository structure 
+
     c-compiler/
     ├── Cargo.lock
     ├── Cargo.toml
@@ -60,6 +63,7 @@ Stages of the compiler processing:
             └── keywords.rs
 
 #### <u>logic</u> 📁
+
 Contains the core logic of the compiler:
 - **`lexer.rs`**: Handles lexical analysis by breaking down the input C code into tokens.
 - **`parser.rs`**: Converts tokens into an Abstract Syntax Tree (AST).
@@ -70,12 +74,14 @@ Contains the core logic of the compiler:
 - **`utils.rs`**: Contains utility functions used across the compiler.
 
 #### <u>data_structures</u> 📁
+
 Contains data structures used by the compiler:
 - **`ast.rs`**: Defines the structure of the Abstract Syntax Tree (AST).
 - **`token.rs`**: Defines the token data structure, token types, and functions for working with tokens.
 - **`keywords.rs`**: List of symbols and reserved keywords in the language.
 
 ## Supported Symbols
+
 The compiler supports the following symbols as defined in the standard C23 version (October 31, 2024) of the C language:
 
 | Symbol | Description           | Symbol | Description           |
@@ -112,6 +118,7 @@ The compiler also processes the following multi-character symbols:
 | `\|=`   | Pipe Equal             |         |                          |
 
 ## Reserved Keywords
+
 List of all reserved keyword identifiers:
 
     - Auto  
@@ -136,6 +143,7 @@ Compiler currently does not support these keywords:
     _Alignas, _Alignof, _Atomic, _BitInt, _Bool, _Complex, _Decimal, _Generic, _Imaginary, _Noreturn, _Static_assert, _Thread_local
 
 ## Valid Escape Sequences
+
 The compiler also supports the following escape sequences as defined in the standard C23:
 
 | Escape Sequence | Description         |
