@@ -1,12 +1,13 @@
 mod logic;
 mod data_structures;
 
-use data_structures::objects::Token;
+use data_structures::token::Token;
 use logic::lexer::lexer_start;
 use std::{cell::RefCell, fs, path::Path, process::Command, rc::Rc};
 
-use crate::data_structures::objects::TokenType;
+use crate::data_structures::token::TokenType;
 
+// Debugging constants
 const PREP: bool = false;
 const DEBUG: bool = false;
 const MAX_TO_PRINT: usize = 85;
@@ -23,7 +24,7 @@ fn main() {
     };
 
     if PREP {
-        let output_path = "debug/prep_out.c";
+        let output_path = "output/prep_out.c";
         let output_dir = Path::new(output_path).parent().unwrap();
 
         if let Err(e) = fs::create_dir_all(output_dir) {
@@ -33,8 +34,6 @@ fn main() {
 
         if let Err(e) = fs::write(output_path, &preprocessed_source) {
             eprintln!("Failed to write preprocessed output: {}", e);
-        } else {
-            println!("Preprocessed output written to {}", output_path);
         }
     }
 

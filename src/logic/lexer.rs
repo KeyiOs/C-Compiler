@@ -1,17 +1,10 @@
 use crate::data_structures::keywords::{Keyword, DOUBLE_SYMBOL_MAP, SYMBOL_MAP, TRIPLE_SYMBOL_MAP};
-use crate::data_structures::objects::{Token, TokenType};
+use crate::data_structures::token::{Token, TokenType};
 use crate::logic::utils::{CharExt, StrExt};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::{Chars, FromStr};
 use std::iter::Peekable;
-
-
-/* * * * * * * * * * * * * * * * * * * */
-/*               TODO                  */
-/* * * * * * * * * * * * * * * * * * * */
-/* Add File name into Error messages   */
-/* * * * * * * * * * * * * * * * * * * */
 
 
 pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -40,9 +33,9 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
             }
 
             if Keyword::from_str(buffer.as_str()).is_ok() {
-                token = Token::set(token, TokenType::Keyword(buffer.clone()), 0);
+                token = Token::set(token, TokenType::Keyword(buffer.clone()), line);
             } else {
-                token = Token::set(token, TokenType::Identifier(buffer.clone()), 0);
+                token = Token::set(token, TokenType::Identifier(buffer.clone()), line);
             }
             
             buffer.clear();
@@ -54,7 +47,7 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                         let oct_digits = format!("0{}", process_octal(&mut chars, escape_char));
                         let oct_value = u32::from_str_radix(&oct_digits, 8).map_err(|_| format!("Invalid octal number '{}' on line {}", oct_digits, line))?;
 
-                        token = Token::set(token, TokenType::Literal(oct_value.to_string()), 0);
+                        token = Token::set(token, TokenType::Literal(oct_value.to_string()), line);
                         start_of_line = false;
 
                         continue;
@@ -77,7 +70,7 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
 
                         let hex_value = u32::from_str_radix(&hex_digits, 16).map_err(|_| format!("Invalid hex number '{}' on line {}", hex_digits, line))?;
 
-                        token = Token::set(token, TokenType::Literal(hex_value.to_string()), 0);
+                        token = Token::set(token, TokenType::Literal(hex_value.to_string()), line);
                         start_of_line = false;
 
                         continue;
@@ -157,7 +150,7 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                 }
             }
 
-            token = Token::set(token, TokenType::Literal(buffer.clone()), 0);
+            token = Token::set(token, TokenType::Literal(buffer.clone()), line);
 
             has_decimal = false;
             buffer.clear();
@@ -202,7 +195,7 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                     return Err(format!("{}, {}: Unterminated character literal", filename, line).into());
                 }
 
-                token = Token::set(token, TokenType::Literal(char_literal), 0);
+                token = Token::set(token, TokenType::Literal(char_literal), line);
             } else if character.is_string_literal() {
                 let mut string_lit = String::new();
                 let mut ok = false;
@@ -221,7 +214,7 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                             }
 
                             if lookahead.peek() != Some(&'"') {
-                                token = Token::set(token, TokenType::Literal(string_lit), 0);
+                                token = Token::set(token, TokenType::Literal(string_lit), line);
                                 ok = true;
 
                                 break;
@@ -279,13 +272,13 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                 let double_symbol = [character, second_char].iter().collect::<String>();
 
                 if DOUBLE_SYMBOL_MAP.contains_key(double_symbol.as_str()) {
-                    token = Token::set(token, TokenType::Operator(double_symbol), 0);
+                    token = Token::set(token, TokenType::Operator(double_symbol), line);
                     chars.next();
                 } else {
-                    token = Token::set(token, TokenType::Operator(character.to_string()), 0);
+                    token = Token::set(token, TokenType::Operator(character.to_string()), line);
                 }
             } else {
-                token = Token::set(token, TokenType::Operator(character.to_string()), 0);
+                token = Token::set(token, TokenType::Operator(character.to_string()), line);
             }
         } else if character == '#' && start_of_line {
             while let Some(c) = chars.next() {
