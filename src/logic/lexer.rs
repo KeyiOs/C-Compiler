@@ -281,16 +281,22 @@ pub fn lexer_start(token_head: &Rc<RefCell<Token>>, source: &str) -> Result<(), 
                 token = Token::set(token, TokenType::Operator(character.to_string()), line);
             }
         } else if character == '#' && start_of_line {
+            let mut linenum = true;
+
             while let Some(c) = chars.next() {
                 if c.is_numeric() {
                     let mut pp_line_num = c.to_string();
 
-                    while let Some(fc) = chars.next() {
+                    while let Some(&fc) = chars.peek() {
                         if !fc.is_numeric() {
                             break;
                         }
 
-                        pp_line_num.push(fc);
+                        chars.next();
+                        if linenum {
+                            pp_line_num.push(fc);
+                            linenum = false;
+                        }
                     }
 
                     line = pp_line_num.parse::<usize>().unwrap_or(0);

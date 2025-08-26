@@ -23,6 +23,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   - [Limitations](#limitations)
 - [Functions and Implementation](#functions-and-implementation)
   - [Token](#token)
+    - [Structure](#structure)
+    - [Types](#types)
+    - [Functions](#functions)
 
 ## Project Overview
 
