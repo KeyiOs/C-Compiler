@@ -124,26 +124,30 @@ The compiler also processes the following multi-character symbols:
 
 List of all reserved keyword identifiers:
 
-    - Auto  
-    - Bool, Break  
-    - Case, Char, Const, Constexpr, Continue  
-    - Default, Do, Double  
-    - Else, Enum, Extern  
-    - False, Float, For  
-    - Goto  
-    - If, Inline, Int  
-    - Long  
-    - Nullptr  
-    - Register, Restrict, Return  
-    - Short, Signed, Sizeof, Static, StaticAssert, Struct, Switch  
-    - ThreadLocal, True, Typedef, Typeof, TypeofUnqual  
-    - Union, Unsigned  
-    - Void, Volatile  
-    - While  
+```
+• Auto  
+• Bool, Break  
+• Case, Char, Const, Constexpr, Continue  
+• Default, Do, Double  
+• Else, Enum, Extern  
+• False, Float, For  
+• Goto  
+• If, Inline, Int  
+• Long  
+• Nullptr  
+• Register, Restrict, Return  
+• Short, Signed, Sizeof, Static, StaticAssert, Struct, Switch  
+• ThreadLocal, True, Typedef, Typeof, TypeofUnqual  
+• Union, Unsigned  
+• Void, Volatile  
+• While  
+```
 
 Compiler currently does not support these keywords:
 
-    _Alignas, _Alignof, _Atomic, _BitInt, _Bool, _Complex, _Decimal, _Generic, _Imaginary, _Noreturn, _Static_assert, _Thread_local
+```
+_Alignas, _Alignof, _Atomic, _BitInt, _Bool, _Complex, _Decimal, _Generic, _Imaginary, _Noreturn, _Static_assert, _Thread_local
+```
 
 ## Valid Escape Sequences
 
