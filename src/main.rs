@@ -11,7 +11,7 @@ use logic::parser_start;
 
 use crate::data::TokenType;
 
-const INPUT_CODE: &str = "./examples/test.txt";
+const INPUT_CODE: &str = "./examples/oddEven.c";
 const DEBUG: bool = false;
 const MAX_TO_PRINT: usize = 20;
 const PRINT_TYPE: u8 = 4; // 0=All, 1=Keyword, 2=Operator, 3=Literal, 4=Identifier
