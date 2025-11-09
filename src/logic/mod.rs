@@ -1,7 +1,5 @@
 pub mod lexer;
+pub use lexer::lexer_start;
+
 pub mod parser;
-pub mod semantic;
-pub mod codegen;
-pub mod ir;
-pub mod sym_table;
-pub mod utils;
+pub use parser::parser_start;

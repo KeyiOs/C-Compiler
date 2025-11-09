@@ -1,76 +1,69 @@
-use crate::data_structures::token::{BaseType, Class};
-#[allow(unused_imports)]
-use crate::data_structures::token::{Declaration, Token, TokenType, Type};
-use std::{cell::RefCell, rc::Rc};
+use std::fmt::Error;
+
+use crate::{Token, TokenType, data::ParserState};
 
 
-pub fn parser_start(mut current_token: Option<Rc<RefCell<Token>>>) -> String {
-    let mut _tree = Vec::<Declaration>::new();
+pub fn parser_start(tokens: &Vec<Token>) -> Result<(), Box<Error>> {
+    let mut parser_state = ParserState { tokens, iterator: 0 };
 
-    while let Some(ref mut token_rc) = current_token {
-        let token_type = token_rc.borrow().token_type.clone();
-        let next_token = token_rc.borrow().next.clone();
+    process_switch(&mut parser_state)?;
+
+    Ok(())
+}
+
+fn process_switch(parser_state: &mut ParserState) -> Result<(), Box<Error>> {
+    let tokens = parser_state.tokens;
+    let mut i = parser_state.iterator;
+
+    while i < tokens.len() {
+        match &tokens[i].token_type {
+            TokenType::Keyword(_) => {
+
+            } TokenType::Identifier(_) => {
+
+            } TokenType::Literal(_) => {
+                process_expression(parser_state)?;
+            } TokenType::Operator(_) => {
+                process_expression(parser_state)?;
+            }
+        }
+
+        i += 1;
+    }
+
+    parser_state.iterator = i;
+    Ok(())
+}
+
+fn process_expression(parser_state: &mut ParserState) -> Result<(), Box<Error>> {
+    let tokens = &parser_state.tokens;
+    let i = parser_state.iterator;
+    let string = tokens[i].token_type.value();
+    
+    if string == "(" {
+        // if !stack.empty() {
+        //  return Err();
+        // }
+
+        parser_state.iterator = i + 1;
+        process_expression(parser_state)?;
+    } else if matches!(tokens[i].token_type, TokenType::Literal(_)) {
+        // stack.push(tokens[i]);
         
-        if let Some(token_type) = &token_type {
-            match token_type {
-                TokenType::Keyword(_) => {
-                    process_keyword(&_tree, token_rc.clone());
-                }
-                TokenType::Identifier(_) => {
-                    
-                }
-                TokenType::Literal(_) => {
-                    
-                }
-                TokenType::Operator(_) => {
-                    
-                }
-            }
-        }
+        parser_state.iterator = i + 1;
+        process_expression(parser_state)?;
+    } else if matches!(tokens[i].token_type, TokenType::Operator(_)) {
+        // ast.type = BinaryOperation;
+        // ast.left = stack.pop();
+        // ast.operator = tokens[i];
 
-        current_token = next_token;
+        parser_state.iterator = i + 1;
+        process_expression(parser_state)?;
+    } else if string == ")" {
+        // ast.type = Literal;
+        // ast.value = tokens[i];
+        // return ast;
     }
 
-    "Parsing completed".to_string()
-}
-
-
-fn process_keyword(_tree: &Vec<Declaration>, mut token: Rc<RefCell<Token>>) {
-    let keyword = token.borrow().get_string().unwrap().to_string();
-
-    match keyword.as_str() {
-        "typedef" => {
-            let mut identifiers = Vec::new();
-
-            token = Token::next_token(&token);
-            while token.borrow().get_string().unwrap().to_string() != ";" {
-                let identifier = token.borrow().get_string().unwrap().to_string();
-                identifiers.push(identifier);
-
-                token = Token::next_token(&token);
-            }
-
-            #[allow(non_snake_case)]
-            let AST: Declaration;
-
-            if identifiers[1] == "(" {
-                AST = set_ast(Class::Typedef, identifiers[0].clone(), Type::Function { return_type: identifiers[0].clone(), parameters: identifiers[1..].to_vec() }, None);
-            } else {
-                AST = set_ast(Class::Typedef, identifiers.pop().unwrap(), Type::Primitive { ttype: BaseType::Other(identifiers.join(" ")) }, None);
-            }
-
-            println!("{}", AST);
-        }
-        _ => {}
-    }
-}
-
-
-fn set_ast(class: Class, name: String, type_info: Type, initializer: Option<String>) -> Declaration {
-    Declaration {
-        class: class,
-        name: name,
-        type_info: type_info,
-        initializer: initializer,
-    }
+    Ok(())  // Replace with return Ast
 }
